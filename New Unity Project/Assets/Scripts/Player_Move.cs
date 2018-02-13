@@ -4,102 +4,219 @@ using UnityEngine;
 
 public class Player_Move : MonoBehaviour {
 
-    public float playerSpeed;
-    private bool facingRight;
-    public float playerJumpPower;
-    private float moveX;
-    int terrainLayerMask;
+    private readonly float WalkSpeed = 5f, FallSpeed = 3f;
+
+    private enum PlayerState { IDLE, WALKING, JUMPING }
+
+    private PlayerState currentState;
+
+    private bool input_MoveLeft, input_MoveRight, input_Jump;
+
+    private SpriteRenderer sprite;
+
+    private float velocityX, VelocityY;
+
     public bool grounded;
-    public float distToGround;
-    public int againstWall;
 
+    void Start()
+    {
+        sprite = GetComponent<SpriteRenderer>();
 
-	// Use this for initialization
-	void Start () {
-        playerSpeed = 10;
-        playerJumpPower = 1250;
-        facingRight = true;
-        distToGround = GetComponent<BoxCollider2D>().bounds.extents.y;
+        currentState = PlayerState.IDLE;
+    }
+
+    void Update()
+    {
+        RegisterInput();
+
+        switch (currentState)
+        {
+            case PlayerState.IDLE:
+                UpdateIdle();
+                break;
+            case PlayerState.WALKING:
+                UpdateWalking();
+                break;
+            case PlayerState.JUMPING:
+                UpdateJumping();
+                break;
+        }
+    }
+
+    void UpdateIdle()
+    {
+        if (!CheckFloorCollision())
+        {
+            InitFalling();
+            return;
+        }
+
+        if (input_Jump)
+        {
+            InitJumping();
+            return;
+        }
+
+        if (input_MoveLeft || input_MoveRight)
+        {
+            currentState = PlayerState.WALKING;
+            return;
+        }
+    }
+
+    void UpdateWalking()
+    {
+        if (!CheckFloorCollision())
+        {
+            InitFalling();
+            return;
+        }
+
+        if (input_Jump)
+        {
+            InitJumping();
+            return;
+        }
+
+        if (input_MoveLeft && !CheckLeftWallCollision())
+        {
+            sprite.flipX = true;
+            transform.Translate(Vector3.left * WalkSpeed * Time.deltaTime);
+        }
+        else if (input_MoveRight && !CheckRightWallCollision())
+        {
+            sprite.flipX = false;
+            transform.Translate(Vector3.right * WalkSpeed * Time.deltaTime);
+        }
+        else
+        {
+            currentState = PlayerState.IDLE;
+        }
+    }
+
+    void InitFalling()
+    {
+        ResetVelocity();
+        currentState = PlayerState.JUMPING;
+    }
+
+    void InitJumping()
+    {
+        ResetVelocity();
+        VelocityY = 14f;
+        currentState = PlayerState.JUMPING;
         grounded = false;
-        againstWall = 0;
-        terrainLayerMask = 1 << LayerMask.NameToLayer("Terrain");
     }
-	
-	// Update is called once per frame
-	void FixedUpdate () {
-        if (!grounded){
-            grounded = IsGrounded();
-            againstWall = isAgainstWall();
-        }
-        Player_Input();
-	}
 
-    void Player_Input(){
-        //CONTROLS
-        moveX = Input.GetAxis("Horizontal");
-        if (Input.GetButtonDown("Jump")){
-            Jump();
+    void UpdateJumping()
+    {
+        if (CheckRoofCollision())
+        {
+            VelocityY = -1f;
         }
-        //ANIMATIONS
-        //PLAYER DIRECTION
-        if (moveX > 0.0f && facingRight == false){
-            FlipPlayer();
-        }
-        else if(moveX <= 0.0f && facingRight == true){
-            FlipPlayer();
-        }
-        //PHYSICS
-        gameObject.GetComponent<Rigidbody2D>().velocity = new Vector2(moveX * playerSpeed, gameObject.GetComponent<Rigidbody2D>().velocity.y);
 
-    }
-    void Jump(){
-        //JUMPING CODE
-        if (CheckJump()){
-            if (againstWall == 0){
-                GetComponent<Rigidbody2D>().AddForce(Vector2.up * playerJumpPower);
-                grounded = false;
-            }
-            else if(againstWall == 1){
-                GetComponent<Rigidbody2D>().AddForce(new Vector2(1.0f,1.0f).normalized * playerJumpPower*2);
-                grounded = false;
-            }
-            else if (againstWall == 2){
-                GetComponent<Rigidbody2D>().AddForce(new Vector2(-1.0f, 1.0f).normalized * playerJumpPower*2);
-                grounded = false;
-            }
-            else { }
+        transform.Translate(Vector3.up * VelocityY * Time.deltaTime);
+        if (input_Jump)
+        {
+            VelocityY -= 9.82f * 3 * Time.deltaTime;
+        }
+        else
+        {
+            VelocityY -= 9.82f * 6 * Time.deltaTime;
+        }
+
+        if (input_MoveLeft && !CheckLeftWallCollision())
+        {
+            sprite.flipX = true;
+            transform.Translate(Vector3.left * WalkSpeed * Time.deltaTime);
+        }
+        else if (input_MoveRight && !CheckRightWallCollision())
+        {
+            sprite.flipX = false;
+            transform.Translate(Vector3.right * WalkSpeed * Time.deltaTime);
+        }
+
+        if (VelocityY < 0f && CheckFloorCollision())
+        {
+            SnapToGround();
+            currentState = PlayerState.IDLE;
+            return;
         }
     }
-    void FlipPlayer(){
-        facingRight = !facingRight;
-        Vector2 localScale = gameObject.transform.localScale;
-        localScale.x *= -1;
-        transform.localScale = localScale;
+
+    void RegisterInput()
+    {
+        input_MoveLeft = Input.GetKey(KeyCode.A) ? true : false;
+        input_MoveRight = Input.GetKey(KeyCode.D) ? true : false;
+        input_Jump = Input.GetKey(KeyCode.Space) ? true : false;
     }
-    bool CheckJump(){
-        // SKA KOMMA MER I DENNA IFFEN OM MANA OCH SLOWFALL OCH STUFF
-        if (grounded || againstWall == 1 || againstWall == 2){
+
+    bool CheckFloorCollision()
+    {
+        RaycastHit2D floorHit;
+
+        int bitmask = 1 << LayerMask.NameToLayer("Terrain");
+        floorHit = Physics2D.BoxCast(transform.position, new Vector2(0.5f, 0.5f), 0, Vector3.down, 0.2f, bitmask);
+
+        if (floorHit)
+        {
             return true;
         }
-        else{
-            return false;
-        }
-    }
-    bool IsGrounded(){
-        
-        return Physics2D.Raycast(transform.position, Vector2.down, distToGround + 0.1f, terrainLayerMask);
+
+        return false;
     }
 
-    int isAgainstWall(){
+    void SnapToGround()
+    {
+        RaycastHit2D floorHit;
 
-        if (Physics2D.Raycast(transform.position, Vector2.left, distToGround + 0.1f, terrainLayerMask)){
-            return 1;
+        int bitmask = 1 << LayerMask.NameToLayer("Terrain");
+
+        floorHit = Physics2D.BoxCast(transform.position, new Vector2(0.5f, 0.5f), 0, Vector3.down, 0.2f, bitmask);
+
+        if (floorHit)
+        {
+            grounded = true;
+            transform.localPosition = new Vector3(transform.localPosition.x, floorHit.point.y + 0.4f, 0);
         }
-        else if (Physics2D.Raycast(transform.position, Vector2.right, distToGround + 0.1f, terrainLayerMask)){
-            return 2;
-        }
-        else{
-            return 0;
-        }
+    }
+
+    bool CheckLeftWallCollision()
+    {
+        RaycastHit2D wallHit;
+
+        int bitmask = 1 << LayerMask.NameToLayer("Terrain");
+
+        wallHit = Physics2D.BoxCast(transform.position, new Vector2(0.5f, 0.5f), 0, Vector3.left, 0.2f, bitmask);
+
+        return wallHit ? true : false;
+    }
+
+    bool CheckRightWallCollision()
+    {
+        RaycastHit2D wallHit;
+
+        int bitmask = 1 << LayerMask.NameToLayer("Terrain");
+
+        wallHit = Physics2D.BoxCast(transform.position, new Vector2(0.5f, 0.5f), 0, Vector3.right, 0.2f, bitmask);
+
+        return wallHit ? true : false;
+    }
+
+    bool CheckRoofCollision()
+    {
+        RaycastHit2D roofHit;
+
+        int bitmask = 1 << LayerMask.NameToLayer("Terrain");
+
+        roofHit = Physics2D.BoxCast(transform.position, new Vector2(0.5f, 0.5f), 0, Vector3.up, 0.2f, bitmask);
+
+        return roofHit ? true : false;
+    }
+
+    void ResetVelocity()
+    {
+        velocityX = 0;
+        VelocityY = 0;
     }
 }
