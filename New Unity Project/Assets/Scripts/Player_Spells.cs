@@ -6,6 +6,7 @@ public class Player_Spells : MonoBehaviour {
 
     public float slowfallManaCost = 0.25f;
     public float slowfallGravityConst = 0.1f;
+    public bool slowfalling = false;
 
     // Use this for initialization
     void Start () {
@@ -13,7 +14,7 @@ public class Player_Spells : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void FixedUpdate () {
+	void Update () {
 		if (Input.GetKeyDown(KeyCode.R)){
             Slowfall(true);
         }
@@ -34,11 +35,13 @@ public class Player_Spells : MonoBehaviour {
 
     void Slowfall(bool active){
         if (active){
+            
             GetComponent<Rigidbody2D>().gravityScale = GetComponent<Rigidbody2D>().gravityScale * slowfallGravityConst;
+            slowfalling = true;
         }
         else{
             GetComponent<Rigidbody2D>().gravityScale = 10;
-
+            slowfalling = false;
         }
     }
 }
