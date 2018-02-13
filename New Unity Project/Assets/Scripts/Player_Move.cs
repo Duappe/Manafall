@@ -115,14 +115,17 @@ public class Player_Move : MonoBehaviour {
             VelocityY = -1f;
         }
 
+        
+        float gravity = GetComponent<Player_Spells>().slowfalling ? 9.82f * GetComponent<Player_Spells>().slowfallGravityConst : 9.82f;
+
         transform.Translate(Vector3.up * VelocityY * Time.deltaTime);
         if (input_Jump)
         {
-            VelocityY -= 9.82f * 3 * Time.deltaTime;
+            VelocityY -= gravity * 3 * Time.deltaTime;
         }
         else
         {
-            VelocityY -= 9.82f * 6 * Time.deltaTime;
+            VelocityY -= gravity * 6 * Time.deltaTime;
         }
 
         if (input_MoveLeft && !CheckLeftWallCollision())
@@ -218,5 +221,10 @@ public class Player_Move : MonoBehaviour {
     {
         velocityX = 0;
         VelocityY = 0;
+    }
+
+    public bool isDescending()
+    {
+        return currentState == PlayerState.JUMPING && VelocityY < 0;
     }
 }

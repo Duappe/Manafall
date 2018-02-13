@@ -20,12 +20,11 @@ public class Character_Mana : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void FixedUpdate () {
+	void Update () {
         RegenMana();
         manaBar.value = CalculateMana();
 	}
     public bool SpendMana(float manaToSpend){
-
         if(currentMana >= manaToSpend){
             currentMana -= manaToSpend;
             return true;
@@ -33,7 +32,6 @@ public class Character_Mana : MonoBehaviour {
         else{
             return false;
         }
-
     }
     
     float CalculateMana(){
@@ -44,7 +42,7 @@ public class Character_Mana : MonoBehaviour {
     void RegenMana(){
         if (GetComponent<Player_Move>().grounded){
             if (currentMana < maxMana){
-                currentMana += manaRegen;
+                currentMana += manaRegen * Time.deltaTime;
             }
             else{
                 currentMana = maxMana;

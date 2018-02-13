@@ -470,7 +470,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0abc4d7b1e1fcab4394895956a340809, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  manaRegen: 1
+  manaRegen: 50
   manaBar: {fileID: 2039476234}
 --- !u!114 &526964770
 MonoBehaviour:
@@ -483,7 +483,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91c9cc01436dce944a893b37a0a355cc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  slowfallManaCost: 0.25
+  slowfallManaCost: 25
   slowfallGravityConst: 0.1
   slowfalling: 0
 --- !u!1 &570807182

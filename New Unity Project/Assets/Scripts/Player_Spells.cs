@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Player_Spells : MonoBehaviour {
 
-    public float slowfallManaCost = 0.25f;
+    public float slowfallManaCost = 25f;
     public float slowfallGravityConst = 0.1f;
     public bool slowfalling = false;
 
@@ -15,32 +15,16 @@ public class Player_Spells : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		if (Input.GetKeyDown(KeyCode.R)){
-            Slowfall(true);
-        }
-        if(Input.GetKey(KeyCode.R)){
-            GetComponent<Character_Mana>().SpendMana(slowfallManaCost);
-            if (!GetComponent<Character_Mana>().SpendMana(slowfallManaCost)){
-                Slowfall(false);
-            }
-        }
-        if (Input.GetKeyUp(KeyCode.R)){
-            Slowfall(false);
-        }
-        if (GetComponent<Player_Move>().grounded){
-            Slowfall(false);
-        }
-
-	}
-
-    void Slowfall(bool active){
-        if (active){
-            
-            GetComponent<Rigidbody2D>().gravityScale = GetComponent<Rigidbody2D>().gravityScale * slowfallGravityConst;
+        bool slowfallingInput = Input.GetKey(KeyCode.R);
+        if ( 
+            GetComponent<Player_Move>().isDescending() &&
+            !GetComponent<Player_Move>().grounded && 
+            slowfallingInput && GetComponent<Character_Mana>().SpendMana(slowfallManaCost * Time.deltaTime))
+        {
             slowfalling = true;
         }
-        else{
-            GetComponent<Rigidbody2D>().gravityScale = 10;
+        else
+        {
             slowfalling = false;
         }
     }
