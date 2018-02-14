@@ -4,13 +4,13 @@ using UnityEngine;
 
 public class Player_Move : MonoBehaviour {
 
-    private readonly float WalkSpeed = 5f, FallSpeed = 3f;
+    private readonly float WalkSpeed = 8f, FallSpeed = 4f;
 
     private enum PlayerState { IDLE, WALKING, JUMPING }
 
     private PlayerState currentState;
 
-    private bool input_MoveLeft, input_MoveRight, input_Jump;
+    private bool input_MoveLeft, input_MoveRight, input_Jump, input_Init_Jump;
 
     private SpriteRenderer sprite;
 
@@ -119,6 +119,16 @@ public class Player_Move : MonoBehaviour {
         float gravity = GetComponent<Player_Spells>().slowfalling ? 9.82f * GetComponent<Player_Spells>().slowfallGravityConst : 9.82f;
 
         transform.Translate(Vector3.up * VelocityY * Time.deltaTime);
+
+        if (input_Init_Jump && GetComponent<Player_Spells>().slowfalling)
+        {
+            if (GetComponent<Character_Mana>().SpendMana(20))
+            {
+                GetComponent<Character_Mana>().SpendMana(20);
+                InitJumping();
+            }
+        }
+
         if (input_Jump)
         {
             VelocityY -= gravity * 3 * Time.deltaTime;
@@ -152,6 +162,7 @@ public class Player_Move : MonoBehaviour {
         input_MoveLeft = Input.GetKey(KeyCode.A) ? true : false;
         input_MoveRight = Input.GetKey(KeyCode.D) ? true : false;
         input_Jump = Input.GetKey(KeyCode.Space) ? true : false;
+        input_Init_Jump = Input.GetKeyDown(KeyCode.Space) ? true : false;
     }
 
     bool CheckFloorCollision()

@@ -7,7 +7,7 @@ public class Character_Mana : MonoBehaviour {
 
     public float currentMana{ get; set; }
     public float maxMana{ get; set;}
-    public float manaRegen = 1.0f;
+    public float manaRegen = 50.0f;
 
     public Slider manaBar;
 

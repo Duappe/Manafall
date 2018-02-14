@@ -4,14 +4,16 @@ using UnityEngine;
 
 public class Player_Spells : MonoBehaviour {
 
-    public float slowfallManaCost = 25f;
+    // Variables for Slowfall------------------------
+    public float slowfallManaCost = 20f;
     public float slowfallGravityConst = 0.1f;
     public bool slowfalling = false;
 
     // Use this for initialization
     void Start () {
-		
-	}
+        
+
+    }
 	
 	// Update is called once per frame
 	void Update () {
@@ -19,7 +21,8 @@ public class Player_Spells : MonoBehaviour {
         if ( 
             GetComponent<Player_Move>().isDescending() &&
             !GetComponent<Player_Move>().grounded && 
-            slowfallingInput && GetComponent<Character_Mana>().SpendMana(slowfallManaCost * Time.deltaTime))
+            slowfallingInput && 
+            GetComponent<Character_Mana>().SpendMana(slowfallManaCost * Time.deltaTime))
         {
             slowfalling = true;
         }
